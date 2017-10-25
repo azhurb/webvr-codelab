@@ -11,4 +11,8 @@
   limitations under the License.
 */
 
-new Demo();
+if ('getVRDisplays' in navigator) {
+    new DemoVR();
+} else {
+    new Demo();
+}
