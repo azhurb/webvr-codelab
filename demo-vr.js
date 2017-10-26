@@ -62,8 +62,31 @@ class DemoVR extends Demo {
     _presentChanged() {
         if (this._display && this._display.isPresenting) {
             this._button.textContent = 'Exit VR';
+            this._renderer.autoClear = false;
+            this._display.depthNear = this._camera.near;
+            this._display.depthFar = this._camera.far;
+            this._camera.matrixAutoUpdate = false;
         } else {
             this._button.textContent = 'Enable VR';
+            this._renderer.autoClear = true;
+            this._camera.matrixAutoUpdate = true;
         }
+
+        this._onResize();
+    }
+
+
+    _onResize() {
+        if (!this._display || !this._display.isPresenting) {
+            return super._onResize();
+        }
+
+        const leftEye = this._display.getEyeParameters('left');
+        const rightEye = this._display.getEyeParameters('right');
+
+        this._width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
+        this._height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
+
+        this._renderer.setSize(this._width, this._height, false);
     }
 }
