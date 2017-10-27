@@ -20,6 +20,8 @@ class DemoVR extends Demo {
 
         this._presentChanged = this._presentChanged.bind(this);
         window.addEventListener('vrdisplaypresentchange', this._presentChanged);
+
+        this._frameData = new VRFrameData();
     }
 
     // Choose the first available VR display
@@ -75,7 +77,6 @@ class DemoVR extends Demo {
         this._onResize();
     }
 
-
     _onResize() {
         if (!this._display || !this._display.isPresenting) {
             return super._onResize();
@@ -88,5 +89,43 @@ class DemoVR extends Demo {
         this._height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
 
         this._renderer.setSize(this._width, this._height, false);
+    }
+
+    _render() {
+        // If we aren't presenting to a display then do the non-VR render
+        if (!this._display || !this._display.isPresenting) {
+            return super._render();
+        }
+
+        this._display.getFrameData(this._frameData);
+
+        // Clear the canvas manually.
+        this._renderer.clear();
+
+        // Left eye.
+        this._updateCamera(this._frameData.leftViewMatrix, this._frameData.leftProjectionMatrix);
+        this._renderEye(0);
+
+        // Ensure that left eye calcs aren't going to interfere with right eye ones.
+        this._renderer.clearDepth();
+
+        // Right eye.
+        this._updateCamera(this._frameData.rightViewMatrix, this._frameData.rightProjectionMatrix);
+        this._renderEye(this._width / 2);
+
+        this._display.submitFrame();
+        this._display.requestAnimationFrame(this._update);
+    }
+
+    _renderEye(x) {
+        this._renderer.setViewport(x, 0, this._width / 2, this._height);
+        this._renderer.render(this._scene, this._camera);
+    }
+
+    _updateCamera(viewMatrix, projectionMatrix) {
+        this._camera.projectionMatrix.fromArray(projectionMatrix);
+        this._camera.matrix.fromArray(viewMatrix);
+        this._camera.matrix.getInverse(this._camera.matrix);
+        this._camera.updateMatrixWorld(true);
     }
 }
